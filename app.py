@@ -10,6 +10,14 @@ Then run:
     python online_gaming_behaviour_analysis.py
 """
 
+import os
+import sys
+
+# Use non-interactive backend for headless environments
+if not os.environ.get('DISPLAY'):
+    import matplotlib
+    matplotlib.use('Agg')
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -395,21 +403,26 @@ def main():
     # Train model
     try:
         model, cat_cols, num_cols, cat_options, num_defaults, accuracy, df = load_and_train_model()
+        print(f"[main] Model trained. Accuracy={accuracy:.4f}")
     except Exception as e:
-        # If training fails, show simple messagebox window
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror("Error", f"Failed to load/train model:\n{e}")
-        root.destroy()
+        print(f"Error loading/training model: {e}")
         return
-
-    # Build GUI
-    root = tk.Tk()
-    app = GamingBehaviourApp(root, model, cat_cols, num_cols, cat_options, num_defaults, accuracy, df)
-    root.mainloop()
-
-
-from main import main
+    
+    # Check if display is available
+    if not os.environ.get('DISPLAY'):
+        print("\n[INFO] No display detected. Running in headless mode.")
+        print(f"[INFO] Model Accuracy: {accuracy:.2%}")
+        print("[INFO] To use the GUI, run this with X11 forwarding or set DISPLAY variable.")
+        return
+    
+    # Build GUI (only if display is available)
+    try:
+        root = tk.Tk()
+        app = GamingBehaviourApp(root, model, cat_cols, num_cols, cat_options, num_defaults, accuracy, df)
+        root.mainloop()
+    except Exception as e:
+        print(f"Error launching GUI: {e}")
+        return
 
 
 if __name__ == "__main__":
